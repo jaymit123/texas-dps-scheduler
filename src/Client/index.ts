@@ -210,7 +210,7 @@ class TexasScheduler {
         }
         const filteredResponse = response.filter((location: AvailableLocationResponse) => location.Distance < this.config.location.miles);
         if (filteredResponse.length === 0) {
-            log.error(`No Available location found! Nearest location is ${response[0].Distance} miles away! Please change your config and try again!`);
+            log.error(`No available location found! ${response[0]?.Distance ? `The nearest location is ${response[0].Distance} miles away. Please update your configuration and try again.` : ''}`);
             process.exit(0);
         }
         log.info(`Found ${filteredResponse.length} Available location that match your criteria`);
@@ -223,7 +223,7 @@ class TexasScheduler {
         log.info('Checking Available Location Dates....');
         if (!this.availableLocation) return;
         const getLocationFunctions = this.availableLocation.map(location => () => sleep.setTimeout(5000).then(() => this.getLocationDates(location)));
-        for (;;) {
+        for (; ;) {
             console.log('--------------------------------------------------------------------------------');
             await this.queue.addAll(getLocationFunctions).catch(() => null);
             await sleep.setTimeout(this.config.appSettings.interval);
@@ -281,10 +281,9 @@ class TexasScheduler {
             return Promise.resolve(true);
         }
         log.info(
-            `${location.Name} is not Available in ${
-                locationConfig.sameDay
-                    ? 'the same day'
-                    : `around ${locationConfig.daysAround.start}-${locationConfig.daysAround.end} days from ${this.config.location.daysAround.startDate}!`
+            `${location.Name} is not Available in ${locationConfig.sameDay
+                ? 'the same day'
+                : `around ${locationConfig.daysAround.start}-${locationConfig.daysAround.end} days from ${this.config.location.daysAround.startDate}!`
             } `,
         );
 
