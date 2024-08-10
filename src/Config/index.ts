@@ -12,6 +12,7 @@ const parseConfig = (): Config => {
         log.error('Not found config.yml file');
         process.exit(0);
     }
+    console.log(`COnfig Content is ${configContent}`);
     const file = configContent ?? readFileSync('././config.yml', 'utf8');
     let configData = YAML.parse(file);
     configData = parsePersonalInfo(configData);
