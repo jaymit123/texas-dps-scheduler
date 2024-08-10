@@ -8,11 +8,10 @@ import dayjs from 'dayjs';
 
 const parseConfig = (): Config => {
     const configContent = process.env.CONFIG_CONTENT;
-    if (!existsSync('./config.yml')) {
+    if (!configContent && !existsSync('./config.yml')) {
         log.error('Not found config.yml file');
         process.exit(0);
     }
-    console.log(`COnfig Content is ${configContent}`);
     const file = configContent ?? readFileSync('././config.yml', 'utf8');
     let configData = YAML.parse(file);
     configData = parsePersonalInfo(configData);
