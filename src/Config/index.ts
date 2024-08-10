@@ -1,4 +1,4 @@
-import { readFileSync, existsSync } from 'fs';
+import { readFileSync, existsSync, writeFileSync} from 'fs';
 import YAML from 'yaml';
 import { configZod, Config } from '../Interfaces/Config';
 import preferredDayList from '../Assets/preferredDay';
@@ -7,12 +7,12 @@ import 'dotenv/config';
 import dayjs from 'dayjs';
 
 const parseConfig = (): Config => {
+    const configContent = process.env.CONFIG_CONTENT;
     if (!existsSync('./config.yml')) {
         log.error('Not found config.yml file');
         process.exit(0);
     }
-
-    const file = readFileSync('././config.yml', 'utf8');
+    const file = configContent ?? readFileSync('././config.yml', 'utf8');
     let configData = YAML.parse(file);
     configData = parsePersonalInfo(configData);
     configData.location.preferredDays = parsePreferredDays(configData.location.preferredDays);
