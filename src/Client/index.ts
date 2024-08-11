@@ -56,7 +56,6 @@ private isJobRunning = false;
                 .createServer((req: any, res: any) => res.end('Bot is alive!'))
                 .listen(process.env.PORT || 3000);
         log.info(`Texas Scheduler v${packagejson.version} is starting...`);
-        log.info('Requesting Available Location....');
         if (!existsSync('cache')) mkdirSync('cache');
         this.job();
     }
@@ -92,7 +91,7 @@ private isJobRunning = false;
         }
         await this.requestAvailableLocation();
         if (!this.availableLocation) {
-            log.info(`No location founds${this.queue.size == 0 ? ", exiting run..." : ""}`);
+            log.info(`No locations found${this.queue.size == 0 ? ", exiting run..." : ""}`);
             return;
         }
         await this.getLocationDatesAll();
