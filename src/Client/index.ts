@@ -15,7 +15,7 @@ import type { BookSlotPayload, BookSlotResponse } from '../Interfaces/BookSlot';
 import type { ExistBookingPayload, ExistBookingResponse } from '../Interfaces/ExistBooking';
 import type { CancelBookingPayload } from '../Interfaces/CancelBooking';
 import type { AuthPayload } from 'src/Interfaces/Auth';
-
+import cron from 'node-cron';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import randomUseragent from 'random-useragent';
 import PQueue from 'p-queue';
@@ -47,6 +47,7 @@ class TexasScheduler {
     private queue = new PQueue({ concurrency: 1 });
     private userAgent = randomUseragent.getRandom();
     private authToken = null;
+private isJobRunning = false;
 
     public constructor() {
         if (this.config.appSettings.webserver)
@@ -57,8 +58,29 @@ class TexasScheduler {
         log.info(`Texas Scheduler v${packagejson.version} is starting...`);
         log.info('Requesting Available Location....');
         if (!existsSync('cache')) mkdirSync('cache');
-        this.run();
+        this.job();
     }
+
+    public async job() {
+        // Schedule the job to run every minute
+        cron.schedule('* * * * *', async () => {
+            log.info("Checking if the job needs to run...");
+            if (!this.isJobRunning && this.queue.size === 0) {
+                log.info("Running job...");
+                this.isJobRunning = true;
+                try {
+                    await this.run(); // Assuming run is an async function
+                } catch (error) {
+                    console.error("An error occurred during the job:", error);
+                } finally {
+                    this.isJobRunning = false; // Reset the flag after the job is complete
+                }
+            } else {
+                log.info("Job is already running or queue is not empty. Skipping this schedule.");
+            }
+        });
+    }
+
 
     public async run() {
         await this.setAuthToken();
@@ -69,6 +91,10 @@ class TexasScheduler {
             log.warn(`The bot will continue to run, but will cancel existing booking if it found a new one`);
         }
         await this.requestAvailableLocation();
+        if (!this.availableLocation) {
+            log.info(`No location founds${this.queue.size == 0 ? ", exiting run..." : ""}`);
+            return;
+        }
         await this.getLocationDatesAll();
     }
 
@@ -211,20 +237,22 @@ class TexasScheduler {
         const filteredResponse = response.filter((location: AvailableLocationResponse) => location.Distance < this.config.location.miles);
         if (filteredResponse.length === 0) {
             log.error(`No available location found! ${response[0]?.Distance ? `The nearest location is ${response[0].Distance} miles away. Please update your configuration and try again.` : ''}`);
+            if (response[0]?.Distance) {
             process.exit(0);
         }
+        } else {
         log.info(`Found ${filteredResponse.length} Available location that match your criteria`);
         log.info(`${filteredResponse.map(el => el.Name).join(', ')}`);
         this.availableLocation = filteredResponse;
+        }
         return;
     }
 
     private async getLocationDatesAll() {
         log.info('Checking Available Location Dates....');
-        if (!this.availableLocation) return;
         const getLocationFunctions = this.availableLocation.map(location => () => sleep.setTimeout(5000).then(() => this.getLocationDates(location)));
         for (; ;) {
-            console.log('--------------------------------------------------------------------------------');
+            log.info('--------------------------------------------------------------------------------');
             await this.queue.addAll(getLocationFunctions).catch(() => null);
             await sleep.setTimeout(this.config.appSettings.interval);
         }

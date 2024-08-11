@@ -45,6 +45,7 @@
     "dayjs": "^1.11.12",
     "dotenv": "^16.4.5",
     "js-yaml": "^4.1.0",
+    "node-cron": "^3.0.3",
     "p-queue": "6.6.2",
     "prompts": "^2.4.2",
     "puppeteer": "^22.15.0",
