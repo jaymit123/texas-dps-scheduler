@@ -62,7 +62,7 @@ private isJobRunning = false;
 
     public async job() {
         // Schedule the job to run every minute
-        cron.schedule('* 10-16 * * * ', async () => {
+        cron.schedule('* * * * * ', async () => {
             log.info("Checking if the job needs to run...");
             if (!this.isJobRunning && this.queue.size === 0) {
                 log.info("Running job...");
